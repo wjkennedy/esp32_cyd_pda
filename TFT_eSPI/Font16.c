@@ -1,5 +1,7 @@
 // Font 2
 
+#include <Arduino.h>
+
 // Comment out for £ sign for character 24
 #define TFT_ESPI_FONT2_DOLLAR
 

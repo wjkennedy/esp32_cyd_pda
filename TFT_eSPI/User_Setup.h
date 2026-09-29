@@ -124,7 +124,7 @@
 // 2 lines try both options, one of the options should correct the inversion.
 
 // #define TFT_INVERSION_ON
-// #define TFT_INVERSION_OFF
+#define TFT_INVERSION_OFF
 
 
 // ##################################################################################
@@ -139,8 +139,9 @@
 // driven with a PWM signal or turned OFF/ON then this must be handled by the user
 // sketch. e.g. with digitalWrite(TFT_BL, LOW);
 
-#define TFT_BL   21            // LED back-light control pin
+#define TFT_BL   27            // LED back-light control pin
 #define TFT_BACKLIGHT_ON HIGH  // Level to turn ON back-light (HIGH or LOW)
+#define TFT_BACKLIGHT_OFF LOW  // Level to turn OFF back-light
 
 
 
@@ -222,7 +223,7 @@
 //#define TFT_RST   4  // Reset pin (could connect to RST pin)
 #define TFT_RST  -1  // Set TFT_RST to -1 if display RESET is connected to ESP32 board RST
 
-#define TOUCH_CS 33     // Chip select pin (T_CS) of touch screen
+#define TOUCH_CS -1     // Touch is handled by the firmware's XPT2046_Bitbang path
 
 // For ESP32 Dev board (only tested with GC9A01 display)
 // The hardware SPI can be mapped to any pins
@@ -369,7 +370,7 @@
 // #define SPI_FREQUENCY  20000000
 //#define SPI_FREQUENCY  27000000
 // #define SPI_FREQUENCY  40000000
-#define SPI_FREQUENCY  55000000 // STM32 SPI1 only (SPI2 maximum is 27MHz)
+#define SPI_FREQUENCY  55000000
 // #define SPI_FREQUENCY  80000000
 
 // Optional reduced SPI frequency for reading TFT

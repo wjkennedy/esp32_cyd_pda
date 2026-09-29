@@ -1,5 +1,7 @@
 // Original Adafruit_GFX 5x7 font
 
+#include <Arduino.h>
+
 #ifndef FONT5X7_H
 #define FONT5X7_H
 

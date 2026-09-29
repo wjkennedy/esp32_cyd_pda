@@ -15,21 +15,16 @@ PDA is Personal Digital Assistant. Small handheld computer. Like smartphone with
 # Installation via web flasher
 * https://sau412.github.io/esp32_cyd_pda/flash
 
-# Required libraries
-* TFT_eSPI - install via arduino library manager
-* XPT2046_Bitbang - install via arduino library manager
-* ESPping
-* Ticker
+# Build and flash with PlatformIO
+* Install PlatformIO Core (`pio`) and a USB serial driver for the ESP32 board.
+* Build the firmware: `./build.sh build`
+* Flash it: `PORT=/dev/cu.usbserial-XXXX ./build.sh flash` (Linux commonly uses `/dev/ttyUSB0`)
+* Open the serial monitor: `PORT=/dev/cu.usbserial-XXXX ./build.sh monitor`
+* Build and flash in one step: `PORT=/dev/cu.usbserial-XXXX ./build.sh all`
 
-# Installation via Arduino IDE
-* Install Arduino IDE
-* Install Required libraries (see above)
-* Replace User_Setup.h with a file from https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display/blob/main/DisplayConfig/User_Setup.h
-* Add ESP32 libraries
-* Board Selection: In the Arduino IDE, go to Tools > Board and select ESP32-2432S028R
-* Set in Arduino IDE Tools - Partition scheme - No OTA (2 MP APP/2 MB FATFS)
-* Compile and upload
-* Done
+PlatformIO downloads the ESP32 toolchain and libraries on the first build. The
+project uses the repository's `TFT_eSPI/User_Setup.h` and the custom
+`partitions-ffat.csv` layout automatically.
 
 Check instructions at https://randomnerdtutorials.com/cheap-yellow-display-esp32-2432s028r/ if you have troubles.
 
