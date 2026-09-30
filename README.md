@@ -21,6 +21,7 @@ PDA is Personal Digital Assistant. Small handheld computer. Like smartphone with
 * Flash it: `PORT=/dev/cu.usbserial-XXXX ./build.sh flash` (Linux commonly uses `/dev/ttyUSB0`)
 * Open the serial monitor: `PORT=/dev/cu.usbserial-XXXX ./build.sh monitor`
 * Build and flash in one step: `PORT=/dev/cu.usbserial-XXXX ./build.sh all`
+* Refresh the web flasher bundle: `./build.sh web`
 
 PlatformIO downloads the ESP32 toolchain and libraries on the first build. The
 project uses the repository's `TFT_eSPI/User_Setup.h` and the custom

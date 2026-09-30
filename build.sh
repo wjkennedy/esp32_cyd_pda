@@ -34,8 +34,21 @@ case "$ACTION" in
         pio "${pio_args[@]}"
         pio "${pio_args[@]}" -t upload
         ;;
+    web|webflash)
+        # Produce the files consumed by esp-web-tools. Include FFat so a
+        # first-time install does not boot into an unformatted storage prompt.
+        pio "${pio_args[@]}"
+        pio "${pio_args[@]}" -t buildfs
+        WEB_DIR="$ROOT_DIR/Compiled version"
+        mkdir -p "$WEB_DIR"
+        cp ".pio/build/$ENV_NAME/bootloader.bin" "$WEB_DIR/ESP32CYD.ino.bootloader.bin"
+        cp ".pio/build/$ENV_NAME/partitions.bin" "$WEB_DIR/ESP32CYD.ino.partitions.bin"
+        cp ".pio/build/$ENV_NAME/firmware.bin" "$WEB_DIR/ESP32CYD.ino.bin"
+        cp ".pio/build/$ENV_NAME/fatfs.bin" "$WEB_DIR/ESP32CYD.ino.fatfs.bin"
+        cp "$PLATFORMIO_CORE_DIR/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin" "$WEB_DIR/boot_app0.bin"
+        ;;
     *)
-        echo "Usage: $0 [build|flash|monitor|clean|all]" >&2
+        echo "Usage: $0 [build|flash|monitor|clean|all|web]" >&2
         exit 2
         ;;
 esac

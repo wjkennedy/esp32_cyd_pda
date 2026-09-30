@@ -447,7 +447,9 @@
 
 #define IS_WIFI_ENABLED
 
-#define PREFER_SD_IF_AVAILABLE
+// Keep internal FFat as the default application/settings storage. An
+// inserted SD card is still detected, but must not silently replace the
+// volume used by calibration and application data.
 
 // У некоторых CYD младший бит зелёного слишком яркий, для вывода 24-битной картинки можно его игнорировать чтобы не искажались цвета
 //#define IS_BLE_ENABLED
@@ -26144,6 +26146,11 @@ void touch_calibration_save() {
     Storage->mkdir("/Settings");
   }
 
+  // Replace the file so setup() never reads stale coefficients from an
+  // older append-style calibration file.
+  if(Storage->exists("/Settings/Calibration")) {
+    Storage->remove("/Settings/Calibration");
+  }
   file = Storage->open("/Settings/Calibration", FILE_WRITE);
   if(file) {
     sprintf(buff, "%f %f %f %f %f %f", global_ax, global_bx, global_cx, global_ay, global_by, global_cy);
@@ -30623,20 +30630,27 @@ void drawAppTitleRight() {
     right_offset += 10;
   }
   
+  // Home button in the left side of the title bar.
+  tft.fillRect(0, 0, 16, 16, color_scheme_title_bg);
+  tft.drawLine(2, 7, 8, 2, color_scheme_title_fg);
+  tft.drawLine(8, 2, 14, 7, color_scheme_title_fg);
+  tft.drawRect(4, 7, 8, 7, color_scheme_title_fg);
+  tft.drawLine(7, 14, 7, 9, color_scheme_title_bg);
+  tft.drawLine(8, 14, 8, 9, color_scheme_title_bg);
+
   // Рисуем название, правую часть
   strcpy(buff, current_app_title);
   //Serial.printf("tft.textWidth(%s) = %d, ro = %d\n", buff, tft.textWidth(buff, FONT_DEFAULT), right_offset);
   // 8 в середине - доп интервал, чтобы не сливался текст
-  while(8 + tft.textWidth(buff, FONT_DEFAULT) + 8 + right_offset > tft.width()) {
+  while(16 + tft.textWidth(buff, FONT_DEFAULT) + 8 + right_offset > tft.width()) {
     if(strlen(buff) == 0) break;
     buff[strlen(buff) - 1] = 0;
   }
   tft.setTextColor(color_scheme_title_fg, color_scheme_title_bg);
-  tft.fillRect(0, 0, 8, 16, color_scheme_title_bg);
-  tft.drawString(buff, 8, 0, FONT_DEFAULT);
+  tft.drawString(buff, 16, 0, FONT_DEFAULT);
 
   // Заполняем серединку
-  tft.fillRect(8 + tft.textWidth(buff, FONT_DEFAULT), 0, tft.width() - 8 - tft.textWidth(buff, FONT_DEFAULT) - right_offset, 16, color_scheme_title_bg);
+  tft.fillRect(16 + tft.textWidth(buff, FONT_DEFAULT), 0, tft.width() - 16 - tft.textWidth(buff, FONT_DEFAULT) - right_offset, 16, color_scheme_title_bg);
 }
 
 void disableAppTitle() {
@@ -31545,7 +31559,17 @@ char touchIsMenuAction() {
   return 0;
 }
 
+char touchIsHomeAction() {
+  if(app_title_enabled && global_touch_present_flag && global_touch_y < 16
+    && global_touch_x < 16 && global_menu_visible_flag == 0) {
+    global_exit_flag = 1;
+    return 1;
+  }
+  return 0;
+}
+
 char touchIsExitAction() {
+  touchIsHomeAction();
   touchIsMenuAction();
   //Serial.println("touchIsExitAction");
   // Обновить заголовок
@@ -33446,20 +33470,21 @@ void setup() {
   //Serial.printf("Free heap line %d: %d, max alloc %d\n", __LINE__, ESP.getFreeHeap(), ESP.getMaxAllocHeap());
   if(SD.begin(SD_CS, sdSPI)) {
     sd_available_flag = 1;
-    Storage = &SD;
-    storage_type = STORAGE_TYPE_SD;
     Serial.println("Storage type SD present");
   }
 
-#ifdef PREFER_SD_IF_AVAILABLE
-  else {
-    // Проверка доступности FFat только если нет SD
-    if(ffat_available_flag) {
+  // The FFat probe above ends the filesystem, so mount it again before
+  // handing it to the application layer.
+  if(ffat_available_flag && FFat.begin(IS_FORMAT_FFAT_IF_FAILED)) {
       Storage = &FFat;
       storage_type = STORAGE_TYPE_FFAT;
-    }
+      Serial.println("Storage selected: FFat");
   }
-#endif
+  else if(sd_available_flag) {
+    Storage = &SD;
+    storage_type = STORAGE_TYPE_SD;
+    Serial.println("Storage selected: SD fallback");
+  }
 
   //Serial.printf("Free heap line %d: %d, max alloc %d\n", __LINE__, ESP.getFreeHeap(), ESP.getMaxAllocHeap());
 
@@ -33621,12 +33646,9 @@ void setup() {
         calibration_required = 1;
       }
     }
-    if(!read_file_to_buff("/Settings/TouchHardware", 79, buff) || strcmp(buff, TOUCH_HARDWARE_REVISION)) {
-      calibration_required = 1;
-    }
-    if(touchPollTouchStatus()) {
-      calibration_required = 1;
-    }
+    // Do not infer a calibration request from the touch IRQ during startup.
+    // On this shared-SPI controller the IRQ can be low briefly while the
+    // panel powers up, which used to force calibration on every reboot.
   }
 
   if(calibration_required) {
@@ -33635,11 +33657,6 @@ void setup() {
   }
 
   // Тут можно задавать вопросы - сенсор откалиброван
-#ifndef PREFER_SD_IF_AVAILABLE
-  if(ffat_available_flag && sd_available_flag) {
-    select_storage_app(APP_MODE_SPECIAL, NULL);
-  }
-#endif
   if(storage_type == STORAGE_TYPE_NONE) {
     drawError("FFat mount failed");
     if(drawConfirm("Format FFat?") == 0) {
